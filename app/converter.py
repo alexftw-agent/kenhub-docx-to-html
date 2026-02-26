@@ -223,13 +223,13 @@ def process_special_markers(text: str) -> Tuple[str, List[str]]:
         return f'<div class="highlighted-box"><p>{content}</p></div>', warnings
     
     # Green highlight / Highlights gallery
-    highlight_match = re.search(r'\[(Green highlight|Highlights gallery)[^\]]*\]\s*([^\\n]*)', text, re.IGNORECASE)
+    highlight_match = re.search(r'\[(Green highlight|Highlights gallery)[^\]]*\]\s*([^\n]*)', text, re.IGNORECASE)
     if highlight_match:
         slugs = highlight_match.group(2).strip()
         return f'<div class="image-gallery-container embedded-widget outset-left open" data-image-slugs="{slugs}"></div>', warnings
     
     # Gallery pattern
-    gallery_match = re.search(r'Gallery:\s*([^\\n]*)', text, re.IGNORECASE)
+    gallery_match = re.search(r'Gallery:\s*([^\n]*)', text, re.IGNORECASE)
     if gallery_match:
         terms = gallery_match.group(1).strip()
         # Convert terms to slugs (simplified)
@@ -280,7 +280,7 @@ def process_table(table) -> str:
             cell_content = "<br>".join(cell_parts)
             cells_html.append(f"<td>{cell_content}</td>")
         
-        rows_html.append(f"    <tr>\\n      {chr(10).join(cells_html)}\\n    </tr>")
+        rows_html.append(f"    <tr>\n      {chr(10).join(cells_html)}\n    </tr>")
     
     # Build table HTML
     table_parts = ['<table class="facts-table">']
@@ -291,11 +291,11 @@ def process_table(table) -> str:
     table_parts.append("  </tbody>")
     table_parts.append("</table>")
     
-    return "\\n".join(table_parts)
+    return "\n".join(table_parts)
 
 def apply_content_wrappers(html_parts: List[str], content_type: str, metadata: Dict) -> str:
     """Apply content type specific wrappers"""
-    content = "\\n".join(html_parts)
+    content = "\n".join(html_parts)
     
     if content_type == "study_unit":
         # Find learning objectives section
@@ -305,9 +305,9 @@ def apply_content_wrappers(html_parts: List[str], content_type: str, metadata: D
             objectives_section = obj_match.group(1) + obj_match.group(2)
             rest = content[obj_match.end()-len(obj_match.group(3)):]
             
-            wrapped_objectives = f'<div class="highlighted-box">\\n{objectives_section}\\n</div>'
-            wrapped_rest = f'<div class="learning-path">\\n{rest}\\n</div>' if rest.strip() else ''
+            wrapped_objectives = f'<div class="highlighted-box">\n{objectives_section}\n</div>'
+            wrapped_rest = f'<div class="learning-path">\n{rest}\n</div>' if rest.strip() else ''
             
-            return f'{before}\\n{wrapped_objectives}\\n{wrapped_rest}'
+            return f'{before}\n{wrapped_objectives}\n{wrapped_rest}'
     
     return content
