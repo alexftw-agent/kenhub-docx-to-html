@@ -14,74 +14,83 @@ def convert_docx_to_html(content: bytes) -> Dict[str, Any]:
     # Extract metadata and determine content type
     metadata, content_type = extract_metadata_and_type(doc)
     
-    # Process the document content
+    # Process the document content in document order (paragraphs AND tables interleaved)
     html_parts = []
     warnings = []
     
     # Track list state
     current_list = None
-    current_list_type = None
     current_list_id = None
     
-    # Skip metadata paragraphs at the start
-    start_idx = skip_metadata_paragraphs(doc.paragraphs)
+    # Build lookup maps from XML elements to python-docx objects
+    WML_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+    para_map = {p._element: p for p in doc.paragraphs}
+    table_map = {t._element: t for t in doc.tables}
     
-    for i, paragraph in enumerate(doc.paragraphs[start_idx:], start_idx):
-        # Skip empty paragraphs
-        if not paragraph.text.strip():
-            continue
-            
-        # Check for special markers
-        special_html, special_warnings = process_special_markers(paragraph.text)
-        if special_html:
-            # Close any open list before special content
-            if current_list:
-                html_parts.append(f"</{current_list}>")
-                current_list = None
-            html_parts.append(special_html)
-            warnings.extend(special_warnings)
-            continue
+    # Determine which paragraph index to start from (skip metadata)
+    start_idx = skip_metadata_paragraphs(doc.paragraphs)
+    skip_elements = set()
+    for i in range(start_idx):
+        skip_elements.add(id(doc.paragraphs[i]._element))
+    
+    # Iterate body elements in document order
+    for element in doc.element.body:
+        tag = element.tag.split('}')[-1]
         
-        # Check if this is a list item
-        list_info = get_list_info(paragraph)
-        
-        if list_info:
-            list_type, list_id = list_info
+        if tag == 'p' and element in para_map:
+            if id(element) in skip_elements:
+                continue
+            paragraph = para_map[element]
             
-            # Start new list or continue existing
-            if current_list_id != list_id:
-                # Close previous list
+            # Skip empty paragraphs
+            if not paragraph.text.strip():
+                continue
+            
+            # Check for special markers
+            special_html, special_warnings = process_special_markers(paragraph.text)
+            if special_html:
                 if current_list:
                     html_parts.append(f"</{current_list}>")
-                
-                # Start new list
-                current_list = list_type
-                current_list_id = list_id
-                html_parts.append(f"<{list_type}>")
+                    current_list = None
+                    current_list_id = None
+                html_parts.append(special_html)
+                warnings.extend(special_warnings)
+                continue
             
-            # Add list item
-            item_html = process_paragraph_content(paragraph)
-            html_parts.append(f"  <li>{item_html}</li>")
-        else:
-            # Close any open list
+            # Check if this is a list item
+            list_info = get_list_info(paragraph)
+            
+            if list_info:
+                list_type, list_id = list_info
+                if current_list_id != list_id:
+                    if current_list:
+                        html_parts.append(f"</{current_list}>")
+                    current_list = list_type
+                    current_list_id = list_id
+                    html_parts.append(f"<{list_type}>")
+                item_html = process_paragraph_content(paragraph)
+                html_parts.append(f"  <li>{item_html}</li>")
+            else:
+                if current_list:
+                    html_parts.append(f"</{current_list}>")
+                    current_list = None
+                    current_list_id = None
+                para_html = process_regular_paragraph(paragraph)
+                if para_html:
+                    html_parts.append(para_html)
+        
+        elif tag == 'tbl' and element in table_map:
+            # Close any open list before table
             if current_list:
                 html_parts.append(f"</{current_list}>")
                 current_list = None
                 current_list_id = None
-            
-            # Regular paragraph or heading
-            para_html = process_regular_paragraph(paragraph)
-            if para_html:
-                html_parts.append(para_html)
+            table_html = process_table(table_map[element])
+            html_parts.append(table_html)
     
     # Close any remaining open list
     if current_list:
         html_parts.append(f"</{current_list}>")
-    
-    # Process tables
-    for table in doc.tables:
-        table_html = process_table(table)
-        html_parts.append(table_html)
     
     # Apply content wrappers based on type
     final_html = apply_content_wrappers(html_parts, content_type, metadata)
