@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kenhub DOCX to HTML Converter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏥 Kenhub DOCX to HTML Converter</h1>
+            <p>Convert DOCX files exported from Google Docs into clean HTML for the Kenhub admin interface.</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7,10 12,15 17,10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <h3>Drop your DOCX file here</h3>
+                        <p>or <button type="button" class="browse-button" onclick="document.getElementById('fileInput').click()">browse files</button></p>
+                        <small>Only .docx files are supported</small>
+                    </div>
+                    <input type="file" id="fileInput" accept=".docx" style="display: none;">
+                </div>
+                
+                <button id="convertButton" class="convert-button" disabled>
+                    <span class="button-text">Convert to HTML</span>
+                    <span class="button-spinner" style="display: none;">Converting...</span>
+                </button>
+            </section>
+
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="html">HTML Output</button>
+                    <button class="tab-button" data-tab="preview">Preview</button>
+                    <button class="tab-button" data-tab="metadata">Metadata</button>
+                </div>
+
+                <div class="tab-content active" id="htmlTab">
+                    <div class="output-header">
+                        <h3>Generated HTML</h3>
+                        <button id="copyButton" class="copy-button">
+                            📋 Copy to Clipboard
+                        </button>
+                    </div>
+                    <pre><code id="htmlOutput" class="language-html"></code></pre>
+                </div>
+
+                <div class="tab-content" id="previewTab">
+                    <div class="output-header">
+                        <h3>Preview</h3>
+                        <small>Visual preview of how the HTML will render</small>
+                    </div>
+                    <div id="htmlPreview" class="preview-container"></div>
+                </div>
+
+                <div class="tab-content" id="metadataTab">
+                    <div class="output-header">
+                        <h3>Metadata & Warnings</h3>
+                    </div>
+                    <div id="metadataOutput"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
